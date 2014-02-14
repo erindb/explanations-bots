@@ -51,6 +51,11 @@ button {
 	min-width: 70px;
 }
 
+.smallButton {
+	background: #FFFFFF;
+	font-size: 10px;
+}
+
 button:active {
 	border-left: 1px solid #c9c9c9;
 	border-top: 1px solid #c9c9c9;

@@ -36,9 +36,19 @@ var experiment = {
   trial: function(qNumber) {
     showSlide("trial");
     $('.bar').css('width', ( (qNumber / nQs)*100 + "%"));
+    $('#helpSection').hide();
+
+    if (qNumber == 0) {
+      $("#helpButton").hide();
+    } else {
+      $("#helpButton").show();
+    }
 
     eventPairs = shuffle(eventPairs);
     var eventPair = eventPairs.shift();
+    if (eventPair == null) {
+      eventPair = "ab";
+    }
     var a = eventPair[0];
     var b = eventPair[1];
 
@@ -53,24 +63,60 @@ var experiment = {
     $('.b').html(eventB);
     $(".err").hide();
 
+    var bail = false;
+
     $(".continue").click(function() {
       var explanation = $('#explanation').val();
-      if (explanation.length < 1) {
-        $(".err").show();
+      var bailReason = $('input:radio[name=help]:checked').val();
+      if (explanation.length < 1 & bailReason == null) {
+        if (qNumber == 0) {
+          $("#firstErr").show();
+        } else if (bail) {
+          $("#lastErr").show();
+        } else {
+          $("#laterErr").show();
+          $(".optionalBreak").hide();
+        }
       } else {
         $(".continue").unbind("click");
         $(".err").hide();
-        experiment.data[qNumber] = [eventA, eventB, explanation];
-        events[c] = explanation;
-        eventPairs.push(a + c);
-        eventPairs.push(b + c);
+        if (bailReason == null) {
+          experiment.data[qNumber] = {
+            eventA:eventA,
+            eventB:eventB,
+            explanation: explanation
+          };
+        } else {
+          var otherText = $("#otherText").val();
+          experiment.data[qNumber] = {
+            eventA:eventA,
+            eventB:eventB,
+            explanation:explanation,
+            bailReason:bailReason,
+            otherText:otherText
+          };
+        }
+        if (!explanation == "") {
+          events[c] = explanation;
+          eventPairs.push(a + c);
+          eventPairs.push(b + c);
+        }
+        $('input:radio[name=help]:checked').val("");
         $('#explanation').val("");
+        $('#otherText').val("");
+        $('input:radio[name=help]').attr('checked',false);
         if (qNumber + 1 < nQs) {
           experiment.trial(qNumber+1);
         } else {
           experiment.questionaire();
         }
       }
+    })
+
+    $("#helpButton").click(function() {
+      $("#helpSection").show();
+      $("#helpButton").hide();
+      bail = true;
     })
   },
   
