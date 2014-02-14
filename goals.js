@@ -4,6 +4,17 @@ function showSlide(id) { $(".slide").hide(); $("#"+id).show(); }
 function shuffle(v) { newarray = v.slice(0);for(var j, x, i = newarray.length; i; j = parseInt(Math.random() * i), x = newarray[--i], newarray[i] = newarray[j], newarray[j] = x);return newarray;} // non-destructive.
 function sample(v) {return(shuffle(v)[0]);}
 
+function secondPerson(str) {
+  str = str.replace("I was", "you were");
+  str = str.replace("I", "you");
+  str = str.replace("me", "you");
+  str = str.replace("my", "your");
+  str = str.replace("myself", "yourself");
+  str = str.replace("mine", "yours");
+  str = str.replace("am", "are");
+  return str;
+}
+
 var nQs = 10;
 
 $(document).ready(function() {
@@ -73,6 +84,9 @@ var experiment = {
     } else {
       var goal = goalParent[subgoal]
 
+      $('.goal2').html(secondPerson(goal));
+      $('.subgoal2').html(secondPerson(subgoal));
+
       $('.goal').html(goal);
       $('.subgoal').html(subgoal);
 
@@ -120,6 +134,7 @@ var experiment = {
 
     $('.bar').css('width', ( (qNumber / nQs)*100 + "%"));
 
+    $('.goal2').html(secondPerson(goal));
     $('.goal').html(goal);
 
     $(".continue").click(function() {
@@ -136,10 +151,12 @@ var experiment = {
           response:response
         };
         goals.push(response);
-        subgoals.push(response);
-        goalCounts[response] = 0;
-        goalCounts[goal] += 1;
-        goalParent[response] = goal;
+        if ($('input:checkbox[name=completion]:checked').val() == false) {
+          subgoals.push(response);
+          goalCounts[response] = 0;
+          goalCounts[goal] += 1;
+          goalParent[response] = goal;
+        }
         $('#subgoalResponse').val("");
         if (qNumber + 1 < nQs) {
           experiment.trial(qNumber+1);
