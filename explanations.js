@@ -12,11 +12,12 @@ $(document).ready(function() {
 
 var letters = ["c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n"];
 
-
-var events = {
-  "a": "Beth is very tired",
-  "b": "she is going to stay up until 3am"
-};
+var events = shuffle([
+  { "a": "Beth is very tired",
+    "b": "she is going to stay up until 3am" },
+  { "a": "Alex hates computers",
+    "b": "he just bought a computer" }
+])[0];
 
 var eventPairs = ["ab"];
 
