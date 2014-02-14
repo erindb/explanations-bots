@@ -34,6 +34,7 @@ var goals = [];
 var subgoals = [];
 var goalCounts = {};
 var goalParent = {};
+//var noMoreNecessary = {};
 
 var goalPairs = [];
 
@@ -64,6 +65,7 @@ var experiment = {
         $('.err').show()
       } else {
         goals.push(goal);
+        experiment.data[goal] = goal;
         goalCounts[goal] = 0;
         $('#mygoal').val("");
         if (qNumber == null) {
@@ -99,9 +101,24 @@ var experiment = {
     var type = "subgoal";
     $(".err").hide();
 
-    showSlide("subgoalTrial");
-
     var goal = sample(goals);
+
+/*    var subtype;
+    if (noMoreNecessary[goal] == null) {
+      subtype = sample(["necessary", "helpful"]);
+    } else {
+      subtype = "helpful";
+    }
+
+    if (subtype == "necessary") {
+      $(".necessary").show();
+      $(".helpful").hide();
+    } else {
+      $(".necessary").hide();
+      $(".helpful").show();
+    }*/
+
+    showSlide("subgoalTrial");
 
     if (goal == goals[0]) {
       $("#directly").hide();
@@ -143,7 +160,10 @@ var experiment = {
         experiment.data[qNumber] = {
           type:type,
           goal:goal,
-          response:response
+          //subtype:subtype,
+          response:response,
+          completed:$("#completed").is(':checked'),
+          necessary:$("#necessary").is(':checked')
         };
         subgoals.push(response);
         goalParent[response] = goal;
@@ -153,6 +173,8 @@ var experiment = {
           goalCounts[response] = 0;
         }
         $('#subgoalResponse').val("");
+        $('#completed').prop('checked', false);
+        $('#necessary').prop('checked', false);
         if (qNumber + 1 < nQs) {
           experiment.trial(qNumber+1);
         } else {
@@ -168,6 +190,7 @@ var experiment = {
       experiment.data[qNumber] = {
         type:type,
         goal:goal,
+        //subtype:subtype,
         response:"DIRECTLY"
       };
       //take that goal off the list
@@ -186,10 +209,15 @@ var experiment = {
       experiment.data[qNumber] = {
         type:type,
         goal:goal,
+        //subtype:subtype,
         response:"NOMORE"
       };
-      //take that goal off the list
-      goals.splice(goals.indexOf(goal), 1);
+      //if (subtype == "helpful") {
+        //take that goal off the list
+        goals.splice(goals.indexOf(goal), 1);
+      //} else {
+      //  noMoreNecessary[goal] = true;
+      //}
       if (qNumber + 1 < nQs) {
         experiment.trial(qNumber+1);
       } else {
@@ -223,6 +251,7 @@ var experiment = {
         //also check if this response has already been given
         $(".err").show();
       } else {
+        $("#obvious").unbind("click");
         $(".continue").unbind("click");
         $(".err").hide();
         experiment.data[qNumber] = {
@@ -243,6 +272,7 @@ var experiment = {
     });
     $("#obvious").click(function() {
       $("#obvious").unbind("click");
+      $(".continue").unbind("click");
       experiment.data[qNumber] = {
         type:type,
         goal:goal,
