@@ -5,13 +5,21 @@ function shuffle(v) { newarray = v.slice(0);for(var j, x, i = newarray.length; i
 function sample(v) {return(shuffle(v)[0]);}
 
 function secondPerson(str) {
-  str = str.replace("I was", "you were");
-  str = str.replace("I", "you");
-  str = str.replace("me", "you");
-  str = str.replace("my", "your");
-  str = str.replace("myself", "yourself");
-  str = str.replace("mine", "yours");
-  str = str.replace("am", "are");
+  var replacements = [
+    ["I was", "you were"],
+    ["I", "you"],
+    ["me", "you"],
+    ["my", "your"],
+    ["myself", "yourself"],
+    ["mine", "yours"],
+    ["am", "are"]
+  ]
+  for (var i=0; i<replacements.length; i++) {
+    var pair = replacements[i];
+    var regexpStr = '(^| )' + pair[0] + '($| )';
+    var regexp = new RegExp(regexpStr, 'g');
+    str = str.replace(regexp, "$1" + pair[1] + "$2");
+  }
   return str;
 }
 
@@ -43,8 +51,13 @@ var experiment = {
     }
   },
 
-  goalTrial: function() {
+  goalTrial: function(qNumber) {
     showSlide("goalTrial");
+    if (qNumber == null) {
+      $("#a").html("a");
+    } else {
+      $("#a").html("another");
+    }
     $('.continue').click(function() {
       goal = $('#mygoal').val();
       if (goal.length < 1) {
@@ -53,69 +66,32 @@ var experiment = {
         goals.push(goal);
         goalCounts[goal] = 0;
         $('#mygoal').val("");
-        experiment.trial(0);
+        if (qNumber == null) {
+          experiment.trial(0);
+        } else {
+          experiment.trial(qNumber);
+        }
       }
     })
   },
 
   trial: function(qNumber) {
     var type;
-    if (qNumber == 0) {
+    if (qNumber == 0 & subgoals.length > 0) {
+      type = "subgoal";
+    } else if (subgoals.length > 0 & goals.length > 0) {
+      type = sample(["subgoal", "explanation"]);
+    } else if (goals.length > 0) {
       type = "subgoal";
     } else {
-      type = sample(["subgoal", "explanation"]);
+      type = "goal";
     }
     if (type == "subgoal") {
       experiment.subgoalTrial(qNumber);
-    } else {
+    } else if (type == "explanation") {
       experiment.explanationTrial(qNumber);
-    }
-  },
-  
-  explanationTrial: function(qNumber) {
-    var type = "explanation";
-    $(".err").hide();
-
-    showSlide("explanationTrial");
-    subgoals = shuffle(subgoals);
-    var subgoal = subgoals.shift();
-    if (subgoal == null) {
-      experiment.subgoalTrial(qNumber);
     } else {
-      var goal = goalParent[subgoal]
-
-      $('.goal2').html(secondPerson(goal));
-      $('.subgoal2').html(secondPerson(subgoal));
-
-      $('.goal').html(goal);
-      $('.subgoal').html(subgoal);
-
-      $('.bar').css('width', ( (qNumber / nQs)*100 + "%"));
-
-      $(".continue").click(function() {
-        var response = $('#explanationResponse').val();
-        if (response.length < 1) {
-          //also check if this response has already been given
-          $(".err").show();
-        } else {
-          $(".continue").unbind("click");
-          $(".err").hide();
-          experiment.data[qNumber] = {
-            type:type,
-            goal:goal,
-            subgoal:subgoal,
-            response:response
-          };
-          goalParent[subgoal] = goal;
-          goalPairs.push(goal + subgoal);
-          $('#explanationResponse').val("");
-          if (qNumber + 1 < nQs) {
-            experiment.trial(qNumber+1);
-          } else {
-            experiment.questionaire();
-          }
-        }
-      })
+      experiment.goalTrial(qNumber);
     }
   },
   
@@ -124,11 +100,23 @@ var experiment = {
     $(".err").hide();
 
     showSlide("subgoalTrial");
+
     var goal = sample(goals);
+
+    if (goal == goals[0]) {
+      $("#directly").hide();
+    } else {
+      $("#directly").show();
+    }
+    if (goalCounts[goal] == 0) {
+      $("#nomore").hide();
+    } else {
+      $("#nomore").show();
+    }
 
     if (goalCounts[goal] == 0) {
       $(".quantifier").html("one");
-    } else {
+    } else if (goalCounts[goal] > 0) {
       $(".quantifier").html("another");
     }
 
@@ -142,7 +130,14 @@ var experiment = {
       if (response.length < 1) {
         //also check if this response has already been given
         $(".err").show();
+        if (goal == goals[0]) {
+          $("#orclick").hide();
+        } else {
+          $("#orclick").show();
+        }
       } else {
+        $("#nomore").unbind("click");
+        $("#directly").unbind("click");
         $(".continue").unbind("click");
         $(".err").hide();
         experiment.data[qNumber] = {
@@ -150,12 +145,12 @@ var experiment = {
           goal:goal,
           response:response
         };
-        goals.push(response);
-        if ($('input:checkbox[name=completion]:checked').val() == false) {
-          subgoals.push(response);
+        subgoals.push(response);
+        goalParent[response] = goal;
+        goalCounts[goal] += 1;
+        if (!$("#completed").is(':checked')) {
+          goals.push(response);
           goalCounts[response] = 0;
-          goalCounts[goal] += 1;
-          goalParent[response] = goal;
         }
         $('#subgoalResponse').val("");
         if (qNumber + 1 < nQs) {
@@ -164,6 +159,101 @@ var experiment = {
           experiment.questionaire();
         }
       }
+    });
+
+    $("#directly").click(function() {
+      $("#nomore").unbind("click");
+      $("#directly").unbind("click");
+      $(".continue").unbind("click");
+      experiment.data[qNumber] = {
+        type:type,
+        goal:goal,
+        response:"DIRECTLY"
+      };
+      //take that goal off the list
+      goals.splice(goals.indexOf(goal), 1);
+      if (qNumber + 1 < nQs) {
+        experiment.trial(qNumber+1);
+      } else {
+        experiment.questionaire();
+      }
+    });
+
+    $("#nomore").click(function() {
+      $("#nomore").unbind("click");
+      $("#directly").unbind("click");
+      $(".continue").unbind("click");
+      experiment.data[qNumber] = {
+        type:type,
+        goal:goal,
+        response:"NOMORE"
+      };
+      //take that goal off the list
+      goals.splice(goals.indexOf(goal), 1);
+      if (qNumber + 1 < nQs) {
+        experiment.trial(qNumber+1);
+      } else {
+        experiment.questionaire();
+      }
+    });
+  },
+  
+  explanationTrial: function(qNumber) {
+    var type = "explanation";
+    $(".err").hide();
+
+    showSlide("explanationTrial");
+
+    var subgoal = sample(subgoals);
+    subgoals.splice(subgoals.indexOf(subgoal), 1)
+
+    var goal = goalParent[subgoal];
+
+    $('.goal2').html(secondPerson(goal));
+    $('.subgoal2').html(secondPerson(subgoal));
+
+    $('.goal').html(goal);
+    $('.subgoal').html(subgoal);
+
+    $('.bar').css('width', ( (qNumber / nQs)*100 + "%"));
+
+    $(".continue").click(function() {
+      var response = $('#explanationResponse').val();
+      if (response.length < 1) {
+        //also check if this response has already been given
+        $(".err").show();
+      } else {
+        $(".continue").unbind("click");
+        $(".err").hide();
+        experiment.data[qNumber] = {
+          type:type,
+          goal:goal,
+          subgoal:subgoal,
+          response:response
+        };
+        goalParent[subgoal] = goal;
+        goalPairs.push(goal + subgoal);
+        $('#explanationResponse').val("");
+        if (qNumber + 1 < nQs) {
+          experiment.trial(qNumber+1);
+        } else {
+          experiment.questionaire();
+        }
+      }
+    });
+    $("#obvious").click(function() {
+      $("#obvious").unbind("click");
+      experiment.data[qNumber] = {
+        type:type,
+        goal:goal,
+        subgoal:subgoal,
+        response:"OBVIOUS"
+      }
+        if (qNumber + 1 < nQs) {
+          experiment.trial(qNumber+1);
+        } else {
+          experiment.questionaire();
+        }
     })
   },
   

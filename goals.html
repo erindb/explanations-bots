@@ -55,9 +55,9 @@
 </div>
 
 <div class="slide" id="goalTrial">
-  <p>Please tell us a goal that you would like to achieve.</p>
+  <p>Please tell us <span class="a"></span> goal that you would like to achieve.</p>
   <br/>
-  <p>I want to <input type="text" id="mygoal"></input>.
+  <p>I want to <input type="text" id="mygoal"></input>.<br>
   <button class="continue" type="button">Continue</button>
 </div>
 
@@ -70,8 +70,11 @@
   <br/>
   <button class="continue" type="button">Continue</button>
   <br/>
-  <input type="checkbox" name="completion" value="completed">I have already done this.
-  <p class="err">Please write something new.</p>
+  <input type="checkbox" id="completed">I have already done this.
+  <p class="err">Please write something new<span id="orclick">or click the button below if you can do this directly.</span></p>
+  <button class="smallButton" type="button" id="directly">I can do this directly.</button>
+  <br>
+  <button class="smallButton" type="button" id="nomore">There are no other things I need to do.</button>
 </div>
 
 <div class="slide" id="explanationTrial">
@@ -82,7 +85,9 @@
   <span class="goal"></span>, because <input type="text" id="explanationResponse"></input>.</p>
   <br/>
   <button class="continue" type="button">Continue</button>
-  <p class="err">Please write an explanation.</p>
+  <br/>
+  <p class="err">Please write an explanation or click the button below.</p>
+  <button class="smallButton" type="button" id="obvious">This is obvious.</button>
 </div>
 
 <div class="slide" id="questionaire">
