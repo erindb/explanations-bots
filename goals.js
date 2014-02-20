@@ -1,3 +1,18 @@
+/*
+a fact i just learned:
+
+var direction;
+if(x < 200){
+  direction = 1;
+} else {
+  direction = -1;
+}
+… You could write a shorter version using the ternary notation:
+var direction = x < 200 ? 1 : -1;
+
+from http://coding.smashingmagazine.com/2010/04/20/seven-javascript-things-i-wish-i-knew-much-earlier-in-my-career/
+*/
+
 function caps(a) {return a.substring(0,1).toUpperCase() + a.substring(1,a.length);}
 function uniform(a, b) { return ( (Math.random()*(b-a))+a ); }
 function showSlide(id) { $(".slide").hide(); $("#"+id).show(); }
