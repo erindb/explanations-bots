@@ -23,7 +23,11 @@ canvas {
 }
 
 table {
-  font-size: 16px;
+	font-size: 16px;
+  /*font-size: 24px;
+  font-weight: 600;*/
+    margin-bottom: 0.5em;
+    margin-top: 0.5em;
 }
 
 .slide {
@@ -178,4 +182,12 @@ form {
     height:100%;
     width:0px;
     background-color:#000000
+}
+
+p {
+	width:70%;
+	position:relative;
+	margin: auto auto;
+    margin-bottom: 0.5em;
+    margin-top: 0.5em;
 }

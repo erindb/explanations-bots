@@ -2,6 +2,7 @@ function caps(a) {return a.substring(0,1).toUpperCase() + a.substring(1,a.length
 function uniform(a, b) { return ( (Math.random()*(b-a))+a ); }
 function showSlide(id) { $(".slide").hide(); $("#"+id).show(); }
 function shuffle(v) { newarray = v.slice(0);for(var j, x, i = newarray.length; i; j = parseInt(Math.random() * i), x = newarray[--i], newarray[i] = newarray[j], newarray[j] = x);return newarray;} // non-destructive.
+function sample(v) {return(shuffle(v)[0]);}
 
 var nQs = 10;
 
@@ -10,16 +11,22 @@ $(document).ready(function() {
   $("#mustaccept").hide();
 });
 
-var letters = ["c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n"];
-
-var events = shuffle([
-  { "a": "Beth is very tired",
-    "b": "she is going to stay up until 3am" },
-  { "a": "Alex hates computers",
-    "b": "he just bought a computer" }
+var generatingPair = shuffle([
+  ["Beth is very tired", "she is going to stay up until 3am"],
+  ["Alex hates computers", "he just bought a computer"]
 ])[0];
+/*var generatingEvent = shuffle([
+  "Beth is very tired",
+  "Beth is going to stay up until 3am",
+  "Alex hates computers",
+  "Alex just bought a computer"
+])[0];*/
 
-var eventPairs = ["ab"];
+var events = generatingPair.slice(0);
+
+var unexplained = events.slice(0);
+
+var ungrammatical = [];
 
 var experiment = {
   data: {},
@@ -34,6 +41,43 @@ var experiment = {
   },
   
   trial: function(qNumber) {
+
+    //add an explanation of the checkboxes, iff there are checkboxes
+    if (qNumber == 0) {
+      $("#ungrammaticalExplanation").hide();
+    } else {
+      $("#ungrammaticalExplanation").show();
+    }
+
+/*    //list known events and checkboxes for user-generated ones
+    //in case they're ungrammatical
+    var eventParagraphs = ""
+    for (var i=0; i<events.length; i++) {
+      var e = events[i];
+      var checkbox = i>1 ? '<input type="checkbox" id="ungrammatical' + i + '"/></span>' : "";
+      eventParagraphs += "<tr><td>" + checkbox + "</td><td>" + caps(e) + ".</td></tr>";
+    }
+    $("#events").html(eventParagraphs);*/
+
+    //list known events
+    var eventParagraphs = ""
+    for (var i=0; i<events.length; i++) {
+      var e = events[i];
+      var checkbox;
+      if (ungrammatical.indexOf(e) == -1 & generatingPair.indexOf(e) == -1) {
+        checkbox = '<input type="checkbox" id="ungrammatical' + i + '"/>';
+      } else {
+        checkbox = "";
+      }
+      eventParagraphs += "<p><h3>" + caps(e) + "." + checkbox + "</h3></p>";
+    }
+    $("#events").html(eventParagraphs);
+
+    explainEvent = sample(unexplained);
+    unexplained.splice(unexplained.indexOf(explainEvent), 1);
+    $("#explainEvent").html(caps(explainEvent));
+    $(".lowercaseExplainEvent").html(explainEvent);
+
     showSlide("trial");
     $('.bar').css('width', ( (qNumber / nQs)*100 + "%"));
     $('#helpSection').hide();
@@ -44,23 +88,6 @@ var experiment = {
       $("#helpButton").show();
     }
 
-    eventPairs = shuffle(eventPairs);
-    var eventPair = eventPairs.shift();
-    if (eventPair == null) {
-      eventPair = "ab";
-    }
-    var a = eventPair[0];
-    var b = eventPair[1];
-
-    var eventA = events[a];
-    var eventB = events[b];
-
-    var c = letters.shift();
-
-    $('.capsA').html(caps(eventA));
-    $('.capsB').html(caps(eventB));
-    $('.capsA').html(caps(eventA));
-    $('.b').html(eventB);
     $(".err").hide();
 
     var bail = false;
@@ -82,24 +109,26 @@ var experiment = {
         $(".err").hide();
         if (bailReason == null) {
           experiment.data[qNumber] = {
-            eventA:eventA,
-            eventB:eventB,
+            explainEvent:explainEvent,
             explanation: explanation
           };
+          for (var i=0; i<events.length; i++) {
+            if ($("#ungrammatical" + i).is(':checked')) {
+              ungrammatical.push(events[i]);
+            }
+          }
         } else {
           var otherText = $("#otherText").val();
           experiment.data[qNumber] = {
-            eventA:eventA,
-            eventB:eventB,
+            explainEvent:explainEvent,
             explanation:explanation,
             bailReason:bailReason,
             otherText:otherText
           };
         }
         if (!explanation == "") {
-          events[c] = explanation;
-          eventPairs.push(a + c);
-          eventPairs.push(b + c);
+          events.splice(events.indexOf(explainEvent)+1, 0, explanation);
+          unexplained.push(explanation);
         }
         $('input:radio[name=help]:checked').val("");
         $('#explanation').val("");
@@ -141,6 +170,7 @@ var experiment = {
         experiment.data["comments"] = comments;
         experiment.data["age"] = age;
         experiment.data["events"] = events;
+        experiment.data["ungrammatical"] = ungrammatical;
         showSlide("finished");
         setTimeout(function() { turk.submit(experiment.data) }, 1000);
       }

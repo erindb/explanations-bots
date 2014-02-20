@@ -52,29 +52,41 @@
 </div>
 
 <div class="slide" id="trial">
-  <p><h3><span class="capsA"></span>.</h3></p>
-  <p><h3><span class="capsB"></span>.</h3></p>
-  Please give an explanation for these events.</p>
+  <p>Here are some things you know:</p>
+  <!-- <table align="center"><tbody id="events"></tbody></table> -->
+  <div id="events"></div>
+  <p>Please give an explanation for 
+     <i>why <span class="lowercaseExplainEvent"></span></i>
+     by completing the sentence below. <span id="ungrammaticalExplanation">
+     If a sentence above is ungrammatical or
+     strange, please help me out by checking the box next to it.</span></p>
   <br>
-  <p><span class="capsA"></span> and <span class="b"></span> because <input type="text" id="explanation"></input>.</p>
+  <p><span id="explainEvent"></span> because <input type="text" id="explanation"></input>.</p>
   <button type="button" class="continue" value="Continue">Continue</button>
   <p id="firstErr" class="err">Please complete the sentence.</p>
   <p id="laterErr" class="err">Please complete the sentence or click the button below to let us know why you cannot answer.</p>
   <p id="lastErr" class="err">Please complete the sentence or let us know why you cannot answer.</p>
   <br class="optionalBreak"/>
-  <button type="button" id="helpButton" class="smallButton">I really can't answer this question</button>
+  <!-- <p id="ungrammaticalExplanation">If any of the events are ungrammatical as
+     written, please let us know by clicking the checkbox next to the 
+     ungrammatical event(s) so that we can try to fix it in the future.</p> -->
+  <button type="button" id="helpButton" class="smallButton">help</button>
   <div id="helpSection">
-    <p>That's OK. Please tell us what about this question makes it hard to answer, then
-    click the Continue continue button above.</p>
+    <p>If you're having trouble answering this question, that's OK. Please tell
+    us what about this question makes it hard to answer, then click the
+    Continue continue button above.</p>
     <table align="center"><tbody>
     <tr><td>
-      <input type="radio" name="help" value="ungrammatical"/>The sentence is ungrammatical.
+      <input type="radio" name="help" value="ungrammatical"/>
+      This is ungrammatical.
     </td></tr>
     <tr><td>
-      <input type="radio" name="help" value="unrelated"/>These events are too unrelated.
+      <input type="radio" name="help" value="nonsensical"/>
+      This doesn't make sense.
     </td></tr>
     <tr><td>
-      <input type="radio" name="help" value="obvious"/>The relationship between these events is too obvious.
+      <input type="radio" name="help" value="obvious"/>
+      This is too obvious.
     </td></tr>
     <tr><td>
       <input type="radio" name="help" value="already"/>I feel like I've already answered this question.
