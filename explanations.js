@@ -3,11 +3,13 @@ function uniform(a, b) { return ( (Math.random()*(b-a))+a ); }
 function showSlide(id) { $(".slide").hide(); $("#"+id).show(); }
 function shuffle(v) { newarray = v.slice(0);for(var j, x, i = newarray.length; i; j = parseInt(Math.random() * i), x = newarray[--i], newarray[i] = newarray[j], newarray[j] = x);return newarray;} // non-destructive.
 function sample(v) {return(shuffle(v)[0]);}
+var startTime;
 
-var nQs = 1;
+var nQs = 10;
 
 $(document).ready(function() {
   showSlide("consent");
+  startTime = Date.now();
   $("#mustaccept").hide();
   $.post("http://www.stanford.edu/~erindb/cgi-bin/get-mturk-results.php");
 });
@@ -172,6 +174,8 @@ var experiment = {
         experiment.data["age"] = age;
         experiment.data["events"] = events;
         experiment.data["ungrammatical"] = ungrammatical;
+        var endTime = Date.now();
+        experiment.data["duration"] = endTime - startTime;
         showSlide("finished");
         setTimeout(function() { turk.submit(experiment.data) }, 1000);
       }
