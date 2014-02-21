@@ -4,11 +4,12 @@ function showSlide(id) { $(".slide").hide(); $("#"+id).show(); }
 function shuffle(v) { newarray = v.slice(0);for(var j, x, i = newarray.length; i; j = parseInt(Math.random() * i), x = newarray[--i], newarray[i] = newarray[j], newarray[j] = x);return newarray;} // non-destructive.
 function sample(v) {return(shuffle(v)[0]);}
 
-var nQs = 10;
+var nQs = 1;
 
 $(document).ready(function() {
   showSlide("consent");
   $("#mustaccept").hide();
+  $.post("http://www.stanford.edu/~erindb/cgi-bin/get-mturk-results.php");
 });
 
 var generatingPair = shuffle([
