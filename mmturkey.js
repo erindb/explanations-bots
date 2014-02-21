@@ -122,6 +122,7 @@ turk = turk || {};
       );
       $("#sendToErin").click(function() {
         //email to erin
+        $.post("../cgi-bin/get-mturk-results.php",{data:JSON.stringify(rawData)});
         console.log("hi");
       });
 
