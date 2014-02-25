@@ -72,14 +72,14 @@ var experiment = {
       } else {
         checkbox = "";
       }
-      eventParagraphs += "<p><h3>" + caps(e) + "." + checkbox + "</h3></p>";
+      eventParagraphs += '<p class="things-you-know">' + caps(e) + "." + checkbox + "</p>";
     }
     $("#events").html(eventParagraphs);
 
     explainEvent = sample(unexplained);
     unexplained.splice(unexplained.indexOf(explainEvent), 1);
     $("#explainEvent").html(caps(explainEvent));
-    $(".lowercaseExplainEvent").html(explainEvent);
+    $("#lowercaseExplainEvent").html(explainEvent);
 
     showSlide("trial");
     $('.bar').css('width', ( (qNumber / nQs)*100 + "%"));
@@ -131,7 +131,13 @@ var experiment = {
         }
         if (!explanation == "") {
           events.splice(events.indexOf(explainEvent)+1, 0, explanation);
-          unexplained.push(explanation);
+          //unexplained.push(explanation);
+          nlp.getParsedTree(explanation, function(data) {
+            new_events = split_by_and(data);
+            for (var i=0; i<new_events.length; i++) {
+              unexplained.push(new_events[i]);
+            }
+          });
         }
         $('input:radio[name=help]:checked').val("");
         $('#explanation').val("");
@@ -183,3 +189,75 @@ var experiment = {
   }
 }
   
+//parsing
+function split_by_and(root_node) {
+  function check_node_for_cc(node) {
+    if (node.children) {
+      if (node.children[0].children) {
+        if (node.children[0].value == "S") {
+          var next_node = node.children[0];
+          var possible_cc = next_node.children;
+          for (var k=0; k<possible_cc.length; k++) {
+            var cc_node = possible_cc[k];
+            if (cc_node.value == "CC") {
+              return [i, k];
+            }
+          }
+        } else {
+          var possible_s = node.children[0].children;
+          for (var i=0; i<possible_s.length; i++) {
+            var next_node = possible_s[i];
+            if (next_node.value == "S") {
+              var possible_cc = next_node.children;
+              for (var k=0; k<possible_cc.length; k++) {
+                var cc_node = possible_cc[k];
+                if (cc_node.value == "CC") {
+                  return [i, k];
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    return false;
+  }
+  function get_words_from_node(node) {
+    var children = node.children;
+    if (children.length == 0) {
+      return node.value;
+    } else {
+      var strings = [];
+      for (var i=0; i<children.length; i++) {
+        strings.push(get_words_from_node(children[i]));
+      }
+      return(strings.join(" "));
+    }
+  }
+
+  function get_words_from_node_list(node_list) {
+    var strings = [];
+    for (var i=0; i<node_list.length; i++) {
+      strings.push(get_words_from_node(node_list[i]));
+    }
+    return(strings.join(" "));
+  }
+
+  var cc_indices = check_node_for_cc(root_node);
+  if (cc_indices) {
+    var s_ind = cc_indices[0];
+    var cc_ind = cc_indices[1];
+    var nodes_a = root_node.children[0].children.splice(0);
+    var nodes_b = nodes_a.splice(s_ind+1,nodes_a.length);
+    var nodes_to_add_to_b = nodes_a[s_ind].children.splice(cc_ind,nodes_a[s_ind].children.length);
+    for (i=1; i<nodes_to_add_to_b.length; i++) {
+      nodes_b.splice(0,0,nodes_to_add_to_b[i]);
+    }
+    var a = get_words_from_node_list(nodes_a);
+    var b = get_words_from_node_list(nodes_b);
+    return [a,b];
+  }
+  else {
+    return [get_words_from_node(root_node)];
+  }
+}
