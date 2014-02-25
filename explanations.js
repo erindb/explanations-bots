@@ -76,6 +76,10 @@ var experiment = {
     }
     $("#events").html(eventParagraphs);
 
+    if (unexplained.length == 0) {
+      unexplained = generatingPair.slice(0);
+    }
+
     explainEvent = sample(unexplained);
     unexplained.splice(unexplained.indexOf(explainEvent), 1);
     $("#explainEvent").html(caps(explainEvent));
