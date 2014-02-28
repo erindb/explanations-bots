@@ -143,15 +143,17 @@ var experiment = {
             }
           });
         }
-        $('input:radio[name=help]:checked').val("");
-        $('#explanation').val("");
-        $('#otherText').val("");
-        $('input:radio[name=help]').attr('checked',false);
-        if (qNumber + 1 < nQs) {
-          experiment.trial(qNumber+1);
-        } else {
-          experiment.questionaire();
-        }
+        setTimeout( function() {
+          $('input:radio[name=help]:checked').val("");
+          $('#explanation').val("");
+          $('#otherText').val("");
+          $('input:radio[name=help]').attr('checked',false);
+          if (qNumber + 1 < nQs) {
+            experiment.trial(qNumber+1);
+          } else {
+            experiment.questionaire();
+          }
+        }, 200);
       }
     })
 
