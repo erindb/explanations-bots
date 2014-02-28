@@ -31,6 +31,8 @@ var unexplained = events.slice(0);
 
 var ungrammatical = [];
 
+var originalForm = {};
+
 var experiment = {
   data: {},
   
@@ -134,11 +136,12 @@ var experiment = {
           };
         }
         if (!explanation == "") {
-          events.splice(events.indexOf(explainEvent)+1, 0, explanation);
+          events.splice(events.indexOf(originalForm[explainEvent])+1, 0, explanation);
           //unexplained.push(explanation);
           nlp.getParsedTree(explanation, function(data) {
             new_events = split_by_and(data);
             for (var i=0; i<new_events.length; i++) {
+              originalForm[new_events[i]] = explainEvent;
               unexplained.push(new_events[i]);
             }
           });
