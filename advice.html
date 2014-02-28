@@ -1,0 +1,145 @@
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>Advice</title>
+  <meta name="viewport" content="initial-scale=1.0">
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="jquery-ui.css"/>
+</head> 
+<body>
+
+<div class="progress">
+  <span>Progress:</span>
+  <div class="bar-wrapper">
+    <div class="bar" width="0%">
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="consent">
+  <img src="stanford.png" alt="Stanford University">
+  <br>
+  <br>
+  <!-- <p id='logo-text'>Stanford Language and Cognition Lab</p> -->
+  <p class="block-text">In this experiment, you will ______.</p>
+  <p class="block-text">This experiment should take about ______ minutes to complete.</b></p> 
+  <button type="button" onClick="this.blur(); experiment.instructions()">Start
+  </button>
+  <p class="block-text">(Note: you won't be able to preview this HIT before
+  accepting it.)</p>
+  <p class="block-text" id="mustaccept"> You must accept the HIT in order to
+  continue.</p>
+ 	<p class="block-text" id="legal">By answering the following questions, you 
+ 	are participating in a study being performed by cognitive scientists in the 
+ 	Stanford Department of Psychology. If you have questions about this research, 
+ 	please contact Erin Bennett at 
+ 	<a href="mailto:erindb@stanford.edu">erindb@stanford.edu</a> 
+ 	or Noah Goodman at ngoodman@stanford.edu. You must be at least 18 years old 
+ 	to participate. Your participation in this research is voluntary. You may 
+ 	decline to answer any or all of the following questions. You may decline
+ 	further participation, at any time, without adverse consequences. Your 
+ 	anonymity is assured; the researchers who have requested your
+ 	participation will not receive any personal information about you.</p>
+</div>
+
+<div class="slide" id="instructions">
+  <h2>Instructions</h2>
+  <p>In this experiment, we would like you to _______.</p>
+  <p>Please click "Begin" when you're ready to start.</p>
+  <button type="button" id="begin" value="Begin">
+  Begin</button>
+</div>
+
+<div class="slide" id="initialize">
+  <p>Please tell us an activity that you would like to discuss.</p>
+  <p>I sometimes <input type="text" size=45 id="activity"></input>.</p>
+  <button type="button" class="continue">Continue</button>
+  <p class="err">Please actually enter an activity!!</p>
+</div>
+
+<!-- TRIAL STATES -->
+
+<div class="slide" id="why">
+  <p>Why do you sometimes <span class="repeat-activity"></span>?</p>
+  <p>I <span id="sometimes">sometimes</span> <span class="repeat-activity"></span> because I <input type="text" size=45 id="explanation"></input></p>
+  <button type="button" class="continue">Continue</button>
+</div>
+
+<div class="slide" id="do-you-want">
+  <p>Do you want to <span class="repeat-activity"></span>?</p>
+  <button type="button" id="yes">Yes.</button>
+  <button type="button" id="no">No.</button>
+  <br/>
+  <button type="button" class="ungrammatical">The above is ungrammatical or nonsensical.</button>
+</div>
+
+<div class="slide" id="why-do-you-want">
+  <p>Why do you want to <span class="repeat-activity"></span>?</p>
+  <p>I want to <span class="repeat-activity"></span> because I <input type="text" size=45 id="want-explanation"></input></p>
+  <button type="button" class="continue">Continue</button>
+</div>
+
+<div class="slide" id="conflict">
+  <p>There seems to be a conflict here. You do not want to <span class="thing-you-do-not-want"></span>, but you do want to <span class="thing-you-want"></span> which causes you to <span class="thing-you-do-not-want"></span>.
+  <p>Why do you want to <span class="thing-you-want"></span>?</p>
+  <p>I want to <span class="thing-you-want"></span> because I <input type="text" size=45 id="want-reason"></input>.</p>
+  <p>Why do you not want to <span class="thing-you-do-not-want"></span>?</p>
+  <p>
+    I do not want to <span class="thing-you-do-not-want"></span> because I want to
+    <!-- <select>
+      <option value="want">want to</option>
+      <option value="do-not-want">do not want to</option>
+    </select> -->
+    <input type="text" size=45 id="do-not-want-reason"></input>.
+  </p>
+  <button type="button" class="continue">Continue</button>
+  <button type="button" class="ungrammatical">The above is ungrammatical or nonsensical.</button>
+</div>
+
+<div class="slide" id="other-ways">
+  <p>One way for you to <span class="thing-you-want"></span> is to <span class="thing-you-do-not-want"></span>. What is another way?</p>
+  <p>In order to <span class="thing-you-want"></span>, I could <input type="text" size=45 id="other-way"></input>.</p>
+  <button type="button" class="continue">Continue</button>
+  <button type="button" id="no-other-way">I can't think of any other way</button>
+  <button type="button" class="ungrammatical">The above is ungrammatical or nonsensical.</button>
+</div>
+
+<div class="slide" id="questionaire">
+  <p>Last section! Please enter your responses below, and then click 'Submit'.</p>
+  <br/>
+  <form id="questionaireform">
+  <p>Your age: <input type="text" name="age"></input></p>
+  <br/>
+  <p>Your native language*:<input type="text" name="lg"></input><br/>(the language that
+  was spoken at home when you were a child)</p>
+  <br/>
+  <p>We would be interested in any comments you have about this experiment. Please type them here:</p>
+  <textarea rows="7" cols="70" name="comments"></textarea>
+  <br/>
+  <br/>
+  <button type="button" id="formsubmit">Submit</button>
+  </form>
+  <br/>
+  <p>*required</p>
+</div>
+
+<div class="slide" id="finished">
+  You're finished - thanks for participating! Submitting to Mechanical Turk...
+  <div id="submitToErin"></div>
+</div>
+
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+<br/>
+
+<!-- Scripts -->
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="mmturkey.js"></script>
+<script src="browserCheck.js"></script>
+<script src="advice.js"></script>
+<script type="text/javascript" src="nlp-api-0.1-edits.js"></script>
+</body>
+</html>
