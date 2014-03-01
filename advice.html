@@ -52,7 +52,7 @@
 
 <div class="slide" id="initialize">
   <p>Please tell us an activity that you would like to discuss.</p>
-  <p>I sometimes <input type="text" size=45 id="activity"></input>.</p>
+  <p>I sometimes <input type="text" size=45 id="A"></input>.</p>
   <button type="button" class="continue">Continue</button>
   <p class="err">Please actually enter an activity!!</p>
 </div>
@@ -60,48 +60,46 @@
 <!-- TRIAL STATES -->
 
 <div class="slide" id="why">
-  <p>Why do you sometimes <span class="repeat-activity"></span>?</p>
-  <p>I <span id="sometimes">sometimes</span> <span class="repeat-activity"></span> because I <input type="text" size=45 id="explanation"></input></p>
+  <p>
+    Why
+    <span id="else" class="optional-text">else</span>
+    <span id="why_frame">{{}}</span>?
+  </p>
+  <p>
+    I
+    <span id="sometimes" class="optional-text">sometimes</span>
+    <span id="activity">{{}}</span>
+    because I
+    <input type="text" size=45 id="explanation"></input>.
+  </p>
   <button type="button" class="continue">Continue</button>
+  <p class="err">
+    Please actually enter an explanation (or click a button below)!!
+  </p>
+  <br/>
+  <button type="button" class="ungrammatical">
+    The above is ungrammatical or nonsensical.
+  </button>
+  <button type="button" class="obvious">
+    This is obvious.
+  </button>
+  <button type="button" id="nothing-else">
+    I can't think of anything else.
+  </button>
 </div>
 
 <div class="slide" id="do-you-want">
-  <p>Do you want to <span class="repeat-activity"></span>?</p>
+  <p>
+    Do you want to
+    <span id="to_frame">{{}}</span>?
+  </p>
   <button type="button" id="yes">Yes.</button>
   <button type="button" id="no">No.</button>
   <br/>
-  <button type="button" class="ungrammatical">The above is ungrammatical or nonsensical.</button>
-</div>
-
-<div class="slide" id="why-do-you-want">
-  <p>Why do you want to <span class="repeat-activity"></span>?</p>
-  <p>I want to <span class="repeat-activity"></span> because I <input type="text" size=45 id="want-explanation"></input></p>
-  <button type="button" class="continue">Continue</button>
-</div>
-
-<div class="slide" id="conflict">
-  <p>There seems to be a conflict here. You do not want to <span class="thing-you-do-not-want"></span>, but you do want to <span class="thing-you-want"></span> which causes you to <span class="thing-you-do-not-want"></span>.
-  <p>Why do you want to <span class="thing-you-want"></span>?</p>
-  <p>I want to <span class="thing-you-want"></span> because I <input type="text" size=45 id="want-reason"></input>.</p>
-  <p>Why do you not want to <span class="thing-you-do-not-want"></span>?</p>
-  <p>
-    I do not want to <span class="thing-you-do-not-want"></span> because I want to
-    <!-- <select>
-      <option value="want">want to</option>
-      <option value="do-not-want">do not want to</option>
-    </select> -->
-    <input type="text" size=45 id="do-not-want-reason"></input>.
-  </p>
-  <button type="button" class="continue">Continue</button>
-  <button type="button" class="ungrammatical">The above is ungrammatical or nonsensical.</button>
-</div>
-
-<div class="slide" id="other-ways">
-  <p>One way for you to <span class="thing-you-want"></span> is to <span class="thing-you-do-not-want"></span>. What is another way?</p>
-  <p>In order to <span class="thing-you-want"></span>, I could <input type="text" size=45 id="other-way"></input>.</p>
-  <button type="button" class="continue">Continue</button>
-  <button type="button" id="no-other-way">I can't think of any other way</button>
-  <button type="button" class="ungrammatical">The above is ungrammatical or nonsensical.</button>
+  <button type="button" class="ungrammatical">
+    The above is ungrammatical or nonsensical.
+  </button>
+  <button type="button" id="idunno">I don't know.</button>
 </div>
 
 <div class="slide" id="questionaire">
@@ -136,7 +134,7 @@
 <br/>
 
 <!-- Scripts -->
-<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="jquery.min.js"></script>
 <script src="mmturkey.js"></script>
 <script src="browserCheck.js"></script>
 <script src="advice.js"></script>

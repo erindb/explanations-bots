@@ -3,11 +3,57 @@ function uniform(a, b) { return ( (Math.random()*(b-a))+a ); }
 function showSlide(id) { $(".slide").hide(); $("#"+id).show(); }
 function shuffle(v) { newarray = v.slice(0);for(var j, x, i = newarray.length; i; j = parseInt(Math.random() * i), x = newarray[--i], newarray[i] = newarray[j], newarray[j] = x);return newarray;} // non-destructive.
 function sample(v) {return(shuffle(v)[0]);}
-function rm(v, item) {v.splice(v.indexOf(item), 1);}
+function rm(v, item) {if (v.indexOf(item) > -1) { v.splice(v.indexOf(item), 1); }}
 function rm_sample(v) {var item = sample(v); rm(v, item); return item;}
 var startTime;
 
-var nQs = 6;
+function to_frame(str) {
+  var replacements = [
+    ["^am", "be"],
+    ["^was", "have been"],
+    ["I was", "you were"],
+    ["I", "you"],
+    ["me", "you"],
+    ["my", "your"],
+    ["myself", "yourself"],
+    ["mine", "yours"],
+    ["am", "are"]
+  ]
+  for (var i=0; i<replacements.length; i++) {
+    var pair = replacements[i];
+    var regexpStr = '(^| )' + pair[0] + '($| )';
+    var regexp = new RegExp(regexpStr, 'g');
+    str = str.replace(regexp, "$1" + pair[1] + "$2");
+  }
+  return str;
+}
+
+function why_frame(str) {
+  var replacements = [
+    ["^am", "are you"],
+    ["^was", "were you"],
+    ["I was", "you were"],
+    ["I", "you"],
+    ["me", "you"],
+    ["my", "your"],
+    ["myself", "yourself"],
+    ["mine", "yours"],
+    ["am", "are"]
+  ]
+  for (var i=0; i<replacements.length; i++) {
+    var pair = replacements[i];
+    var regexpStr = '(^| )' + pair[0] + '($| )';
+    var regexp = new RegExp(regexpStr, 'g');
+    str = str.replace(regexp, "$1" + pair[1] + "$2");
+  }
+  if (str.substring(0, 7) === "are you") {
+    return str;
+  } else {
+    return "do you " + str;
+  }
+}
+
+var nQs = 10;
 
 $(document).ready(function() {
   showSlide("consent");
@@ -20,14 +66,11 @@ var ungrammatical = [];
 
 
 var want = {};
-var explained = {};
-
-var uncategorized_activities = [];
-var unexplained_activities = [];
-
-var unexplained_want = [];
-
 var causalPairs = [];
+
+var uncategorized_activities = []; //ask if they want to
+var unexplained_activities = []; //ask for a cause
+var explain_more_activities = []; //ask for other causes
 
 var experiment = {
   data: {},
@@ -46,12 +89,13 @@ var experiment = {
     $('.bar').css('width', ( (qNumber / nQs)*100 + "%"));
     showSlide("initialize");
     $(".continue").click(function() {
-      var activity = $("#activity").val();
+      var activity = $("#A").val();
       if (activity.length > 0) {
         $(".continue").unbind("click");
         uncategorized_activities.push(activity);
-        $("#activity").val("");
-        experiment.why(qNumber+1);
+        unexplained_activities.push(activity);
+        $("#A").val("");
+        experiment.trial(qNumber+1);
       } else {
         $(".err").show();
       }
@@ -59,40 +103,87 @@ var experiment = {
   },
 
   why: function(qNumber) {
+    $(".optional-text").hide();
+    $("#nothing-else").hide();
+
+    var type;
+    if (unexplained_activities.length > 0 &&
+        explain_more_activities.length > 0) {
+      type = sample(["unexplained", "explain_more"]);
+    } else if (unexplained_activities.length > 0) {
+      type = "unexplained";
+    } else {
+      type = "explain_more";
+    }
+    var activity;
+    switch (type) {
+      case "unexplained":
+        activity = rm_sample(unexplained_activities);
+        break;
+      case "explain_more":
+        activity = sample(explain_more_activities);
+        $("#else").show();
+        $("#nothing-else").show();
+        break;
+    }
+
     $(".err").hide();
     $('.bar').css('width', ( (qNumber / nQs)*100 + "%"));
-    var activity = rm_sample(unexplained_activities);
-    $(".repeat-activity").html(activity);
+    $("#activity").html(activity);
+    $("#why_frame").html(why_frame(activity));
     showSlide("why");
     $(".continue").click(function() {
       var explanation = $("#explanation").val();
       if (explanation.length > 0) {
         $(".continue").unbind("click");
+        $(".ungrammatical").unbind("click");
+        $("#nothing-else").unbind("click");
         uncategorized_activities.push(explanation);
         unexplained_activities.push(explanation);
+        explain_more_activities.push(activity);
         causalPairs.push({cause:explanation, effect:activity});
         $("#explanation").val("");
         experiment.do_you_want(qNumber+1);
+      } else {
+        $(".err").show();
       }
     })
+    $(".ungrammatical").click(function() {
+      $(".ungrammatical").unbind("click");
+      $(".continue").unbind("click");
+        $("#nothing-else").unbind("click");
+      rm(uncategorized_activities, activity);
+      rm(explain_more_activities, activity);
+      experiment.trial(qNumber+1);
+    })
+    $("#nothing-else").click(function() {
+      $(".ungrammatical").unbind("click");
+      $(".continue").unbind("click");
+      $("#nothing-else").unbind("click");
+      rm(explain_more_activities, activity);
+      experiment.trial(qNumber+1);
+    })
   },
+
+/*  switch(a) {
+    case 1: "apple"; break;
+    case 2: "orange"; break;
+  }*/
 
   do_you_want: function(qNumber) {
     var activity = rm_sample(uncategorized_activities);
     showSlide("do-you-want");
-    $(".repeat-activity").html(activity);
+    $("#to_frame").html(to_frame(activity));
     var clickfunction = function(want_value) {
       return function() {
         $("#yes").unbind("click");
         $("#no").unbind("click");
         $(".ungrammatical").unbind("click");
         want[activity] = want_value;
-        if (uncategorized_activities.length > 0) {
-          experiment.do_you_want(qNumber+1);
-        } else {
-          //check for conflict
-          experiment.check_for_conflict(qNumber+1);
+        if (want_value == null) {
+          rm(unexplained_activities, activity);
         }
+        experiment.trial(qNumber+1);
       }
     }
     $("#yes").click(clickfunction(true));
@@ -100,51 +191,31 @@ var experiment = {
     $(".ungrammatical").click(clickfunction(null));
   },
 
-  check_for_conflict: function(qNumber) {
-    var causalPair = causalPairs[0];
-    if (causalPair.cause && causalPair.effect) {
-      //want both (ask some more)
-      unexplained_want.push(causalPair.cause);
-      unexplained_want.push(causalPair.effect);
-      experiment.why_do_you_want(qNumber);
-    } else if (causalPair.cause != causalPair.effect) {
-      //conflict (try to fix)
-      experiment.conflict(qNumber);
-    } else {
-      //want neither (dig deeper)
-      experiment.why(qNumber);
-    }
-  },
-
-  why_do_you_want: function(qNumber) {
-    var activity = rm_sample(unexplained_want);
-    showSlide("why-do-you-want");
-    $(".continue").click(function() {
-      $(".continue").unbind("click");
-      if (unexplained_want.length > 0) {
-        experiment.why_do_you_want(qNumber+1);
+  trial: function(qNumber) {
+    if (qNumber < nQs) {
+      if (uncategorized_activities.length > 0 &&
+          (unexplained_activities.length > 0 || 
+            explain_more_activities.length > 0)) {
+        type = sample(["categorize", "explain"]);
+        switch(type) {
+          case "categorize":
+            experiment.do_you_want(qNumber);
+            break;
+          case "explain":
+            experiment.why(qNumber);
+            break;
+        }
+      } else if (uncategorized_activities.length > 0) {
+        experiment.do_you_want(qNumber);
+      } else if (unexplained_activities.length > 0 ||
+                 explain_more_activities.length > 0) {
+        experiment.why(qNumber);
       } else {
-        experiment.questionaire();
+        experiment.initialize(qNumber);
       }
-    })
-  },
-
-  conflict: function(qNumber) {
-    showSlide("conflict");
-    $(".continue").click(function() {
-      $(".continue").unbind("click");
+    } else {
       experiment.questionaire();
-      //experiment.trial(qNumber+1);
-    })
-  },
-
-  other_ways: function(qNumber) {
-    showSlide("other-ways");
-    $(".continue").click(function() {
-      $(".continue").unbind("click");
-      experiment.questionaire();
-      //experiment.trial(qNumber+1);
-    })
+    }
   },
   
 /*  trial: function(qNumber, causalPair) {
