@@ -11,7 +11,7 @@ $(document).ready(function() {
   showSlide("consent");
   startTime = Date.now();
   $("#mustaccept").hide();
-  $.post("http://www.stanford.edu/~erindb/cgi-bin/get-mturk-results.php");
+  //$.post("http://www.stanford.edu/~erindb/cgi-bin/get-mturk-results.php");
 });
 
 var generatingPair = shuffle([
@@ -46,6 +46,8 @@ var experiment = {
   },
   
   trial: function(qNumber) {
+
+    var trialStart = Date.now();
 
     //add an explanation of the checkboxes, iff there are checkboxes
     if (qNumber == 0) {
@@ -102,6 +104,8 @@ var experiment = {
     var bail = false;
 
     $(".continue").click(function() {
+      var trialEnd = Date.now();
+      var rt = trialEnd - trialStart;
       var explanation = $('#explanation').val();
       var bailReason = $('input:radio[name=help]:checked').val();
       if (explanation.length < 1 & bailReason == null) {
@@ -119,7 +123,8 @@ var experiment = {
         if (bailReason == null) {
           experiment.data[qNumber] = {
             explainEvent:explainEvent,
-            explanation: explanation
+            explanation: explanation,
+            rt:rt
           };
           for (var i=0; i<events.length; i++) {
             if ($("#ungrammatical" + i).is(':checked')) {
@@ -132,31 +137,34 @@ var experiment = {
             explainEvent:explainEvent,
             explanation:explanation,
             bailReason:bailReason,
-            otherText:otherText
+            otherText:otherText,
+            rt:rt
           };
         }
         if (!explanation == "") {
-          events.splice(events.indexOf(originalForm[explainEvent])+1, 0, explanation);
           //unexplained.push(explanation);
-          nlp.getParsedTree(explanation, function(data) {
+          /*nlp.getParsedTree(explanation, function(data) {
             new_events = split_by_and(data);
             for (var i=0; i<new_events.length; i++) {
               originalForm[new_events[i]] = explainEvent;
+              events.splice(events.indexOf(originalForm[explainEvent])+1, 0, explanation);
               unexplained.push(new_events[i]);
             }
-          });
+          });*/
         }
         setTimeout( function() {
           $('input:radio[name=help]:checked').val("");
           $('#explanation').val("");
           $('#otherText').val("");
           $('input:radio[name=help]').attr('checked',false);
+          events.splice(events.indexOf(explainEvent)+1, 0, explanation);
+          unexplained.push(explanation);
           if (qNumber + 1 < nQs) {
             experiment.trial(qNumber+1);
           } else {
             experiment.questionaire();
           }
-        }, 200);
+        }, 0);
       }
     })
 
