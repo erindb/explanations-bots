@@ -123,7 +123,7 @@ turk = turk || {};
       );
       $("#sendToErin").click(function() {
         //email to erin
-        $.post("../cgi-bin/get-mturk-results.php",{data:JSON.stringify(rawData)});
+        $.post("http://www.stanford.edu/~erindb/cgi-bin/get-mturk-results.php",{data:JSON.stringify(rawData)});
       });
       //end erin's edits
 
