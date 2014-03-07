@@ -85,6 +85,7 @@ var experiment = {
   },
 
   initialize: function(qNumber) {
+    var trialStart = Date.now();
     $(".err").hide();
     $('.bar').css('width', ( (qNumber / nQs)*100 + "%"));
     showSlide("initialize");
@@ -95,6 +96,8 @@ var experiment = {
         uncategorized_activities.push(activity);
         unexplained_activities.push(activity);
         $("#A").val("");
+        var trialData = {rt: Date.now() - trialStart, activity:activity}
+        experiment.data["trial" + qNumber] = trialData;
         experiment.trial(qNumber+1);
       } else {
         $(".err").show();
@@ -103,6 +106,7 @@ var experiment = {
   },
 
   why: function(qNumber) {
+    var trialStart = Date.now();
     $(".optional-text").hide();
     $("#nothing-else").hide();
 
@@ -143,6 +147,8 @@ var experiment = {
         explain_more_activities.push(activity);
         causalPairs.push({cause:explanation, effect:activity});
         $("#explanation").val("");
+        var trialData = {rt: Date.now() - trialStart, activity:activity, explanation: explanation}
+        experiment.data["trial" + qNumber] = trialData;
         experiment.do_you_want(qNumber+1);
       } else {
         $(".err").show();
@@ -154,6 +160,8 @@ var experiment = {
         $("#nothing-else").unbind("click");
       rm(uncategorized_activities, activity);
       rm(explain_more_activities, activity);
+      var trialData = {rt: Date.now() - trialStart, activity:activity, explanation: "UNGRAMMATICAL"}
+      experiment.data["trial" + qNumber] = trialData;
       experiment.trial(qNumber+1);
     })
     $("#nothing-else").click(function() {
@@ -161,6 +169,8 @@ var experiment = {
       $(".continue").unbind("click");
       $("#nothing-else").unbind("click");
       rm(explain_more_activities, activity);
+      var trialData = {rt: Date.now() - trialStart, activity:activity, explanation: "NOTHING_ELSE"}
+      experiment.data["trial" + qNumber] = trialData;
       experiment.trial(qNumber+1);
     })
   },
@@ -171,6 +181,7 @@ var experiment = {
   }*/
 
   do_you_want: function(qNumber) {
+    var trialStart = Date.now();
     var activity = rm_sample(uncategorized_activities);
     showSlide("do-you-want");
     $("#to_frame").html(to_frame(activity));
@@ -183,6 +194,8 @@ var experiment = {
         if (want_value == null) {
           rm(unexplained_activities, activity);
         }
+        var trialData = {rt: Date.now() - trialStart, activity:activity, want:want_value}
+        experiment.data["trial" + qNumber] = trialData;
         experiment.trial(qNumber+1);
       }
     }
@@ -261,7 +274,8 @@ var experiment = {
         experiment.data["language"] = lang;
         experiment.data["comments"] = comments;
         experiment.data["age"] = age;
-        experiment.data["events"] = events;
+        experiment.data["want"] = want;
+        experiment.data["causalPairs"] = causalPairs;
         experiment.data["ungrammatical"] = ungrammatical;
         var endTime = Date.now();
         experiment.data["duration"] = endTime - startTime;
