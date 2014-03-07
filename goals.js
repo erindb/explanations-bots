@@ -39,10 +39,13 @@ function secondPerson(str) {
 }
 
 var nQs = 10;
+var startTime;
+var trialStart;
 
 $(document).ready(function() {
   showSlide("consent");
   $("#mustaccept").hide();
+  startTime = Date.now();
 });
 
 var goals = [];
@@ -63,11 +66,12 @@ var experiment = {
       $("#instructions #mustaccept").show();
     } else {
       showSlide("instructions");
-      $("#begin").click(function() { experiment.goalTrial(); })
+      $("#begin").click(function() { experiment.trial(); })
     }
   },
 
   goalTrial: function(qNumber) {
+    trialStart = Date.now();
     showSlide("goalTrial");
     if (qNumber == null) {
       $("#a").html("a");
@@ -80,7 +84,8 @@ var experiment = {
         $('.err').show()
       } else {
         goals.push(goal);
-        experiment.data[goal] = goal;
+        experiment.data["goal"] = goal;
+        experiment.data["goalrt"] = Date.now() - trialStart;
         goalCounts[goal] = 0;
         $('#mygoal').val("");
         if (qNumber == null) {
@@ -93,6 +98,7 @@ var experiment = {
   },
 
   trial: function(qNumber) {
+    trialStart = Date.now();
     var type;
     if (qNumber == 0 & subgoals.length > 0) {
       type = "subgoal";
@@ -178,7 +184,8 @@ var experiment = {
           //subtype:subtype,
           response:response,
           completed:$("#completed").is(':checked'),
-          necessary:$("#necessary").is(':checked')
+          necessary:$("#necessary").is(':checked'),
+          rt:Date.now() - trialStart
         };
         subgoals.push(response);
         goalParent[response] = goal;
@@ -206,7 +213,8 @@ var experiment = {
         type:type,
         goal:goal,
         //subtype:subtype,
-        response:"DIRECTLY"
+        response:"DIRECTLY",
+        rt:Date.now() - trialStart
       };
       //take that goal off the list
       goals.splice(goals.indexOf(goal), 1);
@@ -225,7 +233,8 @@ var experiment = {
         type:type,
         goal:goal,
         //subtype:subtype,
-        response:"NOMORE"
+        response:"NOMORE",
+        rt:Date.now() - trialStart
       };
       //if (subtype == "helpful") {
         //take that goal off the list
@@ -273,7 +282,8 @@ var experiment = {
           type:type,
           goal:goal,
           subgoal:subgoal,
-          response:response
+          response:response,
+          rt:Date.now() - trialStart
         };
         goalParent[subgoal] = goal;
         goalPairs.push(goal + subgoal);
@@ -292,7 +302,8 @@ var experiment = {
         type:type,
         goal:goal,
         subgoal:subgoal,
-        response:"OBVIOUS"
+        response:"OBVIOUS",
+        rt:Date.now() - trialStart
       }
         if (qNumber + 1 < nQs) {
           experiment.trial(qNumber+1);
