@@ -3,6 +3,8 @@ function uniform(a, b) { return ( (Math.random()*(b-a))+a ); }
 function showSlide(id) { $(".slide").hide(); $("#"+id).show(); }
 function shuffle(v) { newarray = v.slice(0);for(var j, x, i = newarray.length; i; j = parseInt(Math.random() * i), x = newarray[--i], newarray[i] = newarray[j], newarray[j] = x);return newarray;} // non-destructive.
 function sample(v) {return(shuffle(v)[0]);}
+function rm(v, item) {if (v.indexOf(item) > -1) { v.splice(v.indexOf(item), 1); }}
+function rm_sample(v) {var item = sample(v); rm(v, item); return item;}
 var startTime;
 
 var nQs = 10;
@@ -14,10 +16,20 @@ $(document).ready(function() {
   //$.post("http://www.stanford.edu/~erindb/cgi-bin/get-mturk-results.php");
 });
 
-var generatingPair = shuffle([
-  ["Beth is very tired", "she is going to stay up until 3am"],
-  ["Alex hates computers", "he just bought a computer"]
-])[0];
+var generators = [
+  "Beth is very tired", "Beth is going to stay up until 3am",
+  "Alex hates computers", "Alex just bought a computer",
+  "Carol is American", "Carol lives in Uraguay",
+  "David likes to listen to Ke$ha", "David doesn't want to buy a Ke$ha CD"
+]
+
+var generatingPairs = shuffle([
+  ["Beth is very tired", "Beth is going to stay up until 3am"],
+  ["Alex hates computers", "Alex just bought a computer"],
+  ["Carol is American", "Carol lives in Uraguay"],
+  ["David likes to listen to Ke$ha", "David doesn't want to buy a Ke$ha CD"]
+]);
+var generatingPair = generatingPairs.shift();
 /*var generatingEvent = shuffle([
   "Beth is very tired",
   "Beth is going to stay up until 3am",
@@ -66,12 +78,20 @@ var experiment = {
     }
     $("#events").html(eventParagraphs);*/
 
+    if (unexplained.length == 0) {
+      var genpair = generatingPairs.shift();
+      unexplained.push(genpair[0]);
+      unexplained.push(genpair[1]);
+      events.push(genpair[0]);
+      events.push(genpair[1]);
+    }
+
     //list known events
     var eventParagraphs = ""
     for (var i=0; i<events.length; i++) {
       var e = events[i];
       var checkbox;
-      if (ungrammatical.indexOf(e) == -1 & generatingPair.indexOf(e) == -1) {
+      if (ungrammatical.indexOf(e) == -1 & generators.indexOf(e) == -1) {
         checkbox = '<input type="checkbox" id="ungrammatical' + i + '"/>';
       } else {
         checkbox = "";
@@ -80,12 +100,7 @@ var experiment = {
     }
     $("#events").html(eventParagraphs);
 
-    if (unexplained.length == 0) {
-      unexplained = generatingPair.slice(0);
-    }
-
-    explainEvent = sample(unexplained);
-    unexplained.splice(unexplained.indexOf(explainEvent), 1);
+    explainEvent = rm_sample(unexplained);
     $("#explainEvent").html(caps(explainEvent));
     $("#lowercaseExplainEvent").html(explainEvent);
 
@@ -93,7 +108,7 @@ var experiment = {
     $('.bar').css('width', ( (qNumber / nQs)*100 + "%"));
     $('#helpSection').hide();
 
-    if (qNumber == 0) {
+    if (generators.indexOf(explainEvent) > -1) {
       $("#helpButton").hide();
     } else {
       $("#helpButton").show();
@@ -141,7 +156,7 @@ var experiment = {
             rt:rt
           };
         }
-        if (!explanation == "") {
+        //if (!explanation == "") {
           //unexplained.push(explanation);
           /*nlp.getParsedTree(explanation, function(data) {
             new_events = split_by_and(data);
@@ -151,20 +166,24 @@ var experiment = {
               unexplained.push(new_events[i]);
             }
           });*/
-        }
-        setTimeout( function() {
+        //}
+        //setTimeout( function() {
           $('input:radio[name=help]:checked').val("");
           $('#explanation').val("");
           $('#otherText').val("");
           $('input:radio[name=help]').attr('checked',false);
-          events.splice(events.indexOf(explainEvent)+1, 0, explanation);
-          unexplained.push(explanation);
+          if (explanation.length > 0 & bailReason == null) {
+            events.splice(events.indexOf(explainEvent)+1, 0, explanation);
+            unexplained.push(explanation);
+          } else if (bailReason == "ungrammatical" || bailReason == "nonsensical") {
+            rm(events, explainEvent);
+          }
           if (qNumber + 1 < nQs) {
             experiment.trial(qNumber+1);
           } else {
             experiment.questionaire();
           }
-        }, 0);
+        //}, 0);
       }
     })
 
@@ -206,7 +225,7 @@ var experiment = {
   }
 }
   
-//parsing
+/*//parsing
 function split_by_and(root_node) {
   function check_node_for_cc(node) {
     if (node.children) {
@@ -278,3 +297,4 @@ function split_by_and(root_node) {
     return [get_words_from_node(root_node)];
   }
 }
+*/
