@@ -7,13 +7,217 @@ function rm(v, item) {if (v.indexOf(item) > -1) { v.splice(v.indexOf(item), 1); 
 function rm_sample(v) {var item = sample(v); rm(v, item); return item;}
 
 var startTime; //for calculating duration of the expeirment later
-var nQs = 10; //can be changed for shorter or longer versions
+//var experimentLength = 60000;//600000; //ten minute experiment
+var nQs = 25;
+var data = {};
+
+//---------------html stuff-------------
+var br = "<br/>";
+var submit = "<button type='button' class='continue'>Submit</button>";
+function radio(name, value) {
+  return '<input type="radio" name="' + name + '" id="' + value + '" value="' +
+    value + '"></input>';}
+function span(id, content) {
+  return '<span id="' + id + '">' + content + '</span>';}
+function inputField(id) {
+  return '<input type="text" size="45", id="' + id + '"></input>';}
+function div(id) {
+  return '<div id="' + id + '"></div>';}
+
+radioTable = function(id, params) {
+  function changeCreator(i, params) {
+    var value = params[i][0];
+    return function() {
+      var thisRadio = $("#" + value);
+      var s = $("#" + thisRadio.val() + "-selected");
+      var d = $("#" + thisRadio.val() + "-default");
+      if (thisRadio.is(":checked")) {
+        //show selected, hide default
+        s.show();
+        d.hide();
+      } else {
+        //hide selected, show default
+        s.hide();
+        d.show();
+      }  }
+  }
+  //write html
+  var width = 600;
+  var htmlString = "<table align='center'><tbody>";
+  for (var i=0; i<params.length; i++) {
+    var param = params[i];
+    var value = param[0];
+    var defaultText = param[1];
+    var selectedText = param[2];
+    //table row with radio button in first col and variable text in second col
+    htmlString += "<tr><td>" + radio("radioTable", value) +
+      "</td><td width='" + width + "'>" +
+      span(value + "-selected", selectedText) +
+      span(value + "-default", defaultText) + "</td></tr>";
+  }
+  htmlString += "</tbody></table>";
+  $("#" + id).html(htmlString);
+
+  //dynamify html
+  for (var i=0; i<params.length; i++) {
+    var param = params[i];
+    var value = param[0];
+    $("#" + value + "-selected").hide();
+    $("#" + value + "-default").show();
+    $("input[name='radioTable']").change(changeCreator(i, params))
+  }
+}
+//---------------------------------------------
+
+//event constructor
+var Fact = function(text, graph, causes) {
+  this.explained = false;
+  this.explainable = true;//explainable == null ? true : explainable;
+  this.text = text;
+  this.caps = caps(this.text);
+  this.causes = causes == null ? [] : causes;
+  this.collected = false;
+  this.exhausted = false;
+  this.graph = graph;
+
+  this.question = function(id) {
+    var questionString;
+    if (this.explained) {
+      questionString = "X because Y, Z, and W. Can you think of another explanation for why " + this.text + "?";
+    } else if (this.explainable) {
+      questionString = "Please give an explanation for why " + this.text + ".";
+    } else {
+      questionString = "Can you give an explanation for why " + this.text + "?";
+    }
+    $("#" + id).html(questionString);
+  }
+  this.answer = function(id) {
+    var inputSection = this.caps + " because " + inputField("explanation") + ".";
+    if (this.explained || this.explainable == false) {
+      radioTable(id, [
+        ["yes", "Yes:", "Yes: " + inputSection],
+        ["no", "No.", "No."]])
+    } else {
+      $("#" + id).html(br + inputSection);
+    }
+  }
+  this.explain = function() {
+    showSlide("trial");
+    $("#trial").html(div("question") + div("answer") + submit);
+    this.question("question");
+    this.answer("answer");
+  }
+  this.collect = function(qNum) {
+    var trialData = {
+      "seed":this.graph.seed.text,
+      "event":this.text
+    };
+    function isNoSelected() {
+      var possibleRadio = $("input:radio[name=radioTable]:checked");
+      if (possibleRadio) {
+        return possibleRadio.val() == "no";
+      } else {
+        return false;
+      }
+    }
+    if (isNoSelected()) {
+      //maybe radio button "no" is selected
+      this.collected = true;
+      data["trial" + qNum] = trialData;
+      trialData["explanation"] = "NONE";
+      this.exhausted = true;
+    } else {
+      //else maybe there's input
+      var explanation = $("#explanation").val();
+      if (explanation.length > 0) {
+        this.collected = true;
+        this.graph.queue.push(new Fact(explanation, this.graph, this.text));
+        trialData["explanation"] = explanation;
+      } else {
+        //else show an error
+      }
+    }
+  }
+}
+
+var Graph = function(seedText) {
+  //make graph
+  this.seed = new Fact(seedText, this);
+  this.queue = [this.seed];
+  this.next = function() {
+    return rm_sample(this.queue);
+  }
+}
+
+function instructions() {
+  if (turk.previewMode) {
+    $("#instructions #mustaccept").show();
+  } else {
+    showSlide("instructions");
+    $("#begin").click(function() { whybot(new Graph("John went to the store")); })
+  }
+}
+
+function whybot(graph, qNum) {
+  //if (Date.now() - startTime < experimentLength) {
+  if (qNum < nQs) {
+    var fact = graph.next();
+    fact.explain();
+    $(".continue").click(function() {
+      fact.collect();
+      if (fact.collected) {
+        //(".continue").unbind("click");
+        var nextGraph = graph.queue.length > 0 ?
+          graph :
+          new Graph("the chicken crossed the road");
+        whybot(nextGraph, qNum + 1);
+      }
+    });
+  } else {
+    questionaire();
+  }
+}
 
 $(document).ready(function() {
   showSlide("consent");
   startTime = Date.now(); //for calculating duration of the expeirment later
   $("#mustaccept").hide();
 });
+
+function questionaire() {
+  //disable return key
+  $(document).keypress( function(event){
+   if (event.which == '13') {
+      event.preventDefault();
+    }
+  });
+  //progress bar complete
+  $('.bar').css('width', ( "100%"));
+  showSlide("questionaire");
+  $("#formsubmit").click(function() {
+    rawResponse = $("#questionaireform").serialize();
+    pieces = rawResponse.split("&");
+    var age = pieces[0].split("=")[1];
+    var lang = pieces[1].split("=")[1];
+    var comments = pieces[2].split("=")[1];
+    if (lang.length > 0) {
+      data["language"] = lang;
+      data["comments"] = comments;
+      data["age"] = age;
+      data["events"] = events;
+      data["ungrammatical"] = ungrammatical;
+      var endTime = Date.now();
+      data["duration"] = endTime - startTime;
+      showSlide("finished");
+      setTimeout(function() { turk.submit(data) }, 1000);
+    }
+  });
+}
+
+
+/*//var nQs = 10; //can be changed for shorter or longer versions
+
+
 
 // whenever Ss need a new generating pair, we sample one from here
 var generatingPairs = [
@@ -75,26 +279,14 @@ function displayKnowledge() {
   //return graphKnowledge();
 }
 
-function inputField(id) {
-  return '<input type="text" size="45", id="' + id + '"></input>';
-}
 
-function radio(id) {
-  return '<input type="radio" name="myradios" id="' + id + '" value="' + id +
-    '"></input>';
-}
+
+
 
 var experiment = {
   data: {},
 
-  instructions: function() {
-    if (turk.previewMode) {
-      $("#instructions #mustaccept").show();
-    } else {
-      showSlide("instructions");
-      $("#begin").click(function() { experiment.trial(0); })
-    }
-  },
+  
   
   trial: function(qNumber) {
     var trialStart = Date.now();
@@ -168,7 +360,7 @@ var experiment = {
         unexplained.push({text:explanation, causes:[]});
         X.causes.push(explanation);
 
-        experiment.data["trial" + qNumber] = trialData;
+        data["trial" + qNumber] = trialData;
         if (qNumber + 1 < nQs) {
           experiment.trial(qNumber+1);
         } else {
@@ -197,19 +389,19 @@ var experiment = {
       var lang = pieces[1].split("=")[1];
       var comments = pieces[2].split("=")[1];
       if (lang.length > 0) {
-        experiment.data["language"] = lang;
-        experiment.data["comments"] = comments;
-        experiment.data["age"] = age;
-        experiment.data["events"] = events;
-        experiment.data["ungrammatical"] = ungrammatical;
+        data["language"] = lang;
+        data["comments"] = comments;
+        data["age"] = age;
+        data["events"] = events;
+        data["ungrammatical"] = ungrammatical;
         var endTime = Date.now();
-        experiment.data["duration"] = endTime - startTime;
+        data["duration"] = endTime - startTime;
         showSlide("finished");
-        setTimeout(function() { turk.submit(experiment.data) }, 1000);
+        setTimeout(function() { turk.submit(data) }, 1000);
       }
     });
   }
-}
+}*/
   
 /*//parsing
 function split_by_and(root_node) {
