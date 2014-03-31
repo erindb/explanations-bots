@@ -326,7 +326,7 @@ CauseQuery = function(graph, fact) {
     return {text: text, inputId:"explanation"};*/
     return {text: [
       "Please provide an explanation:",
-      caps(this.fact.title) + " becauase " + inputField("explanation") + "."
+      caps(this.fact.title) + " because " + inputField("explanation") + "."
     ], inputId:"explanation"};
   }
   this.errors = [
@@ -342,20 +342,8 @@ CauseQuery = function(graph, fact) {
       false
     ),
     new InputError(
-      function(answer) {return answer.length == 0 & experiment.skipsAllowed();},
-      ["Please answer the question if you can."
-        , "YOU MUST EXPLAIN " + experiment.nQs + " EVENTS TO COMPLETE THIS HIT."
-        , ""
-        , "If you can't think of an explanation for this event, that's OK, just click the continue button again. We will give you more events to explain until you find something you can answer.",
-        , "Be careful! If you skip all the time, you will eventually run out of opportunities to skip questions."],
-      "answerIfYouCan",
-      true
-    ),
-    new InputError(
       function(answer) {return answer.length == 0 & (!experiment.skipsAllowed());},
       ["Please answer the question to the best of your ability."
-        , "YOU MUST EXPLAIN " + experiment.nQs + " EVENTS TO COMPLETE THIS HIT."
-        , ""
         , "There are no more opportunities to skip questions."],
       "answerNow",
       false
