@@ -26,33 +26,35 @@ var experiment = {
     $('.bar').css('width', ( (experiment.qNum / experiment.nQs)*100 + "%"));
     //if (state.queue.length > 0 && qNum + 1 < nQs) {
     var dialogue = dialogue == null ? null : dialogue;
-    if (experiment.qNum + 1 < experiment.nQs) {
-      if (dialogue == null || dialogue.stop) {
-        if (dialogue) {
-          //store dialogue
-          experiment.data.dialogues.push(dialogue.knowledge);
-        }
-        var seed = experiment.seeds.shift();
-        var facts = [new Fact(seed)];
-        var graph = new Graph(facts);
-        dialogue = new DialogueState(graph);
+    if (dialogue == null || dialogue.stop) {
+      if (dialogue) {
+        //store dialogue
+        experiment.data.dialogues.push(dialogue.knowledge);
       }
-      var query = dialogue.next_query();
-      dialogue.knowledge.push({text: query.fact.title});
-      var otherIds = [];
-      for (var i=1; i<dialogue.knowledge.length; i++) {
-        otherIds.push("ungrammatical" + i)
-      }
-      query.ask("trial", dialogue.accumulatedText(), otherIds, function(answer, otherAnswers) {
-        dialogue.update(query, answer, otherAnswers);
-        experiment.qNum ++;
-        experiment.trial(dialogue);
-      });
-      query.is_started = true;
-    } else {
-      experiment.data.dialogues.push(dialogue.knowledge);
-      experiment.questionaire();
+      var seed = experiment.seeds.shift();
+      var facts = [new Fact(seed)];
+      var graph = new Graph(facts);
+      dialogue = new DialogueState(graph);
+      dialogue.knowledge.push({text:seed});
     }
+    var query = dialogue.next_query();
+    //dialogue.knowledge.push({text: query.fact.title});
+    var otherIds = [];
+    for (var i=1; i<dialogue.knowledge.length; i++) {
+      otherIds.push("ungrammatical" + i)
+    }
+    query.ask("trial", dialogue.accumulatedText(), otherIds, function(answer, otherAnswers) {
+      dialogue.update(query, answer, otherAnswers);
+      experiment.qNum ++;
+      dialogue.knowledge.push({text:answer});
+      if (experiment.qNum + 1 < experiment.nQs) {
+        experiment.trial(dialogue);
+      } else {
+        experiment.data.dialogues.push(dialogue.knowledge);
+        experiment.questionaire();
+      }
+    });
+    query.is_started = true;
   },
 
   instructions: function() {
@@ -132,7 +134,7 @@ function checkbox(id) {return "<input type='checkbox' id='" + id + "'>";};
 function checkboxAndTextInputTrial(question, errors) {
   return function(divId, accumulatedText, otherIds, callback) {
     //write stuff to html, like question, errors (initially hidden), etc.
-    $("#" + divId).html(printlines(accumulatedText) + br + p(question.text) +
+    $("#" + divId).html(printlines(accumulatedText) + br + printlines(question.text) +
        submit + errors.map(function(e) {
         return div(e.id, "err", printlines(e.msg));
       }).join(""));
@@ -314,14 +316,18 @@ CauseQuery = function(graph, fact) {
   this.errorShown = false;
   this.question = function() {
     var text;
-    if (this.is_started) {
+    /*if (this.is_started) {
       text = "Why else is it that " + this.fact.title + "?" +
         " Because " + inputField("explanation") + "."
     } else {
       text = "Why is it that " + this.fact.title + "?" +
         " Because " + inputField("explanation") + "."
     }
-    return {text: text, inputId:"explanation"};
+    return {text: text, inputId:"explanation"};*/
+    return {text: [
+      "Please provide an explanation:",
+      caps(this.fact.title) + " becauase " + inputField("explanation") + "."
+    ], inputId:"explanation"};
   }
   this.errors = [
     //starts with 'of':
@@ -358,10 +364,9 @@ CauseQuery = function(graph, fact) {
   this.ask = checkboxAndTextInputTrial(this.question(), this.errors);
 }
 
-var DialogueState = function(graph, maxDepth) {
+var DialogueState = function(graph) {
   this.graph = graph;
   this.depth = 0;
-  this.maxDepth = maxDepth;
   this.queue = [];
   this.knowledge = [];
   this.stop = false;
@@ -414,8 +419,9 @@ var DialogueState = function(graph, maxDepth) {
       this.add_link(link);
       this.queue.push(new CauseQuery(this.graph, source_fact));
       this.depth++;
-      this.stop = (this.depth == this.maxDepth);
+      this.stop = (this.depth == experiment.maxDepth);
     } else {
+      this.knowledge[this.knowledge.length-1].unanswerable = true;
       this.stop = true;
     }
   }
