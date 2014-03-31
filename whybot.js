@@ -1,7 +1,7 @@
 //-------modifiable experiment variables-------
 var experiment = {
   maxDepth: 5,
-  seeds: ["John went to the store"
+  seeds: shuffle(["John went to the store"
     , "Jane went to the post office"
     , "Alex did the dishes"
     , "Tom cooked dinner"
@@ -10,8 +10,8 @@ var experiment = {
     , "Jack read a book about gardening"
     , "Meg bought a new computer"
     , "Sam repaired his bicycle"
-  ],
-  nQs: 3,
+  ]),
+  nQs: 25,
   startTime: Date.now(),
   qNum: 0,
   data: {dialogues:[]},
@@ -340,7 +340,7 @@ CauseQuery = function(graph, fact) {
       ["Please answer the question if you can."
         , "YOU MUST EXPLAIN " + experiment.nQs + " EVENTS TO COMPLETE THIS HIT."
         , ""
-        , "If you can't think of an explanation for this event, that's OK, just click the submit button again. We will give you more events to explain until you find something you can answer.",
+        , "If you can't think of an explanation for this event, that's OK, just click the continue button again. We will give you more events to explain until you find something you can answer.",
         , "Be careful! If you skip all the time, you will eventually run out of opportunities to skip questions."],
       "answerIfYouCan",
       true

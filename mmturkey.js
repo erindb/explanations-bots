@@ -115,18 +115,6 @@ turk = turk || {};
     // If there's no turk info
     if (!assignmentId || !turkSubmitTo) {
       // Emit the debug output and stop
-
-      //erin's edits
-      $("#submitToErin").html(
-        "<p>If you don't mind sending this output, I'd really appreciate it. Both for the purpose of debugging and for the lols.)</p>" +
-        '<button type="button" id="sendToErin" value="send">Send this output to Erin</button>'
-      );
-      $("#sendToErin").click(function() {
-        //email to erin
-        $.post("http://www.stanford.edu/~erindb/cgi-bin/get-mturk-results.php",{data:JSON.stringify(rawData)}).done(function() {$("#submitToErin").html("Submitted! Thanks!!");});
-      });
-      //end erin's edits
-
       var div = document.createElement('div');
       div.style.fontFamily = '"HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", sans-serif';
       div.style.fontSize = "14px";
