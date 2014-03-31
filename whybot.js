@@ -13,29 +13,44 @@ var experiment = {
   ],
   nQs: 3,
   startTime: Date.now(),
+  qNum: 0,
+  data: {dialogues:[]},
 
-  trial: function(qNumber, dialogue) {
-    $('.bar').css('width', ( (qNumber / experiment.nQs)*100 + "%"));
+  skipsAllowed: function() {
+    var possibleQsLeft = experiment.maxDepth*experiment.seeds.length;
+    return possibleQsLeft + experiment.qNum > experiment.nQs;
+    /*return true;*/
+  },
+
+  trial: function(dialogue) {
+    $('.bar').css('width', ( (experiment.qNum / experiment.nQs)*100 + "%"));
     //if (state.queue.length > 0 && qNum + 1 < nQs) {
     var dialogue = dialogue == null ? null : dialogue;
-    if (dialogue == null || dialogue.stop) {
-      if (dialogue) {
-        //store dialogue
+    if (experiment.qNum + 1 < experiment.nQs) {
+      if (dialogue == null || dialogue.stop) {
+        if (dialogue) {
+          //store dialogue
+          experiment.data.dialogues.push(dialogue.knowledge);
+        }
+        var seed = experiment.seeds.shift();
+        var facts = [new Fact(seed)];
+        var graph = new Graph(facts);
+        dialogue = new DialogueState(graph);
       }
-      var seed = experiment.seeds.shift();
-      var facts = [new Fact(seed)];
-      var graph = new Graph(facts);
-      dialogue = new DialogueState(graph, 5);
-    }
-    if (qNumber + 1 < experiment.nQs) {
       var query = dialogue.next_query();
-      dialogue.knowledge.push(query.fact.title);
-      query.ask("trial", dialogue.accumulatedText(), function(answer) {
-        dialogue.update(query, answer);
-        experiment.trial(qNumber + 1, dialogue);
+      dialogue.knowledge.push({text: query.fact.title});
+      var otherIds = [];
+      for (var i=1; i<dialogue.knowledge.length; i++) {
+        otherIds.push("ungrammatical" + i)
+      }
+      query.ask("trial", dialogue.accumulatedText(), otherIds, function(answer, otherAnswers) {
+        dialogue.update(query, answer, otherAnswers);
+        experiment.qNum ++;
+        experiment.trial(dialogue);
       });
       query.is_started = true;
     } else {
+      experiment.data.dialogues.push(dialogue.knowledge);
       experiment.questionaire();
     }
   },
@@ -56,7 +71,7 @@ var experiment = {
         var graph = new Graph(facts);
         state = new DialogueState(graph, 5);
         trial(state);*/
-        experiment.trial(0);
+        experiment.trial();
       });
     }
   },
@@ -78,15 +93,14 @@ var experiment = {
       var lang = pieces[1].split("=")[1];
       var comments = pieces[2].split("=")[1];
       if (lang.length > 0) {
-        var data = {};
-        data["language"] = lang;
-        data["comments"] = comments;
-        data["age"] = age;
+        experiment.data["language"] = lang;
+        experiment.data["comments"] = comments;
+        experiment.data["age"] = age;
         //data["graph"] = state.graph;
         var endTime = Date.now();
-        data["duration"] = endTime - startTime;
+        experiment.data["duration"] = endTime - startTime;
         showSlide("finished");
-        setTimeout(function() { turk.submit(data) }, 1000);
+        setTimeout(function() { turk.submit(experiment.data) }, 1000);
       }
     });
   }
@@ -104,7 +118,7 @@ function rm_sample(v) {var item = sample(v); rm(v, item); return item;}
 
 //------useful html stuff----------
 var br = "<br/>";
-var submit = "<button type='button' id='continue'>Submit</button>";
+var submit = "<button type='button' id='continue'>Continue</button>";
 function radio(name, value) {return '<input type="radio" name="' + name + '" id="' + value + '" value="' + value + '"></input>';}
 function span(id, content) {return '<span id="' + id + '">' + content + '</span>';}
 function inputField(id) {return '<input type="text" size="45", id="' + id + '"></input>';}
@@ -113,6 +127,59 @@ function div(id, classStr, content) {
   var classStr = classStr == null ? "" : "class='" + classStr + "'";
   return '<div id="' + id + '"' + classStr + '>' + content + '</div>';}
 function p(str) {return "<p>" + str + "</p>";}
+function checkbox(id) {return "<input type='checkbox' id='" + id + "'>";};
+
+function checkboxAndTextInputTrial(question, errors) {
+  return function(divId, accumulatedText, otherIds, callback) {
+    //write stuff to html, like question, errors (initially hidden), etc.
+    $("#" + divId).html(printlines(accumulatedText) + br + p(question.text) +
+       submit + errors.map(function(e) {
+        return div(e.id, "err", printlines(e.msg));
+      }).join(""));
+
+    //hide stuff in html
+    $(".err").hide();
+
+    //write the callback for continue function
+    $("#continue").unbind("click");
+    $("#continue").click(function() {
+      //get answer
+      var answer = $("#" + question.inputId).val();
+
+      var otherAnswers = [];
+      for (var i=0; i<otherIds.length; i++) {
+        var otherId = otherIds[i];
+        var isChecked = $("#" + otherId).is(":checked");
+        if (isChecked) {
+          otherAnswers.push(true);
+        } else {
+          otherAnswers.push(false);
+        }
+      }
+
+      //check answer
+      $(".err").hide(); //hide all errors by default
+      //continue OR show any errors that are raised:
+      var goToNextQuestion = true;
+      for (var i=0; i<errors.length; i++) {
+        var error = errors[i];
+        var hasError = error.detector(answer);
+        if (hasError && (error.showOnlyOnce == false || error.shown == false)) {
+          $("#" + error.id).show();
+          goToNextQuestion = false;
+          error.shown = true;
+        }
+      }
+      if (goToNextQuestion) {
+        if (answer.length > 0) {
+          callback(answer, otherAnswers);
+        } else {
+          callback("NO_RESPONSE", otherAnswers);
+        }
+      }
+    });
+  }
+}
 
 function simpleTextInputTrial(question, errors) {
   return function(divId, accumulatedText, callback) {
@@ -269,16 +336,26 @@ CauseQuery = function(graph, fact) {
       false
     ),
     new InputError(
-      function(answer) {return answer.length == 0;},
+      function(answer) {return answer.length == 0 & experiment.skipsAllowed();},
       ["Please answer the question if you can."
         , "YOU MUST EXPLAIN " + experiment.nQs + " EVENTS TO COMPLETE THIS HIT."
         , ""
-        , "If you can't think of an explanation for this event, that's OK, just click the submit button again. We will give you more events to explain until you find something you can answer."],
+        , "If you can't think of an explanation for this event, that's OK, just click the submit button again. We will give you more events to explain until you find something you can answer.",
+        , "Be careful! If you skip all the time, you will eventually run out of opportunities to skip questions."],
       "answerIfYouCan",
       true
+    ),
+    new InputError(
+      function(answer) {return answer.length == 0 & (!experiment.skipsAllowed());},
+      ["Please answer the question to the best of your ability."
+        , "YOU MUST EXPLAIN " + experiment.nQs + " EVENTS TO COMPLETE THIS HIT."
+        , ""
+        , "There are no more opportunities to skip questions."],
+      "answerNow",
+      false
     )
   ];
-  this.ask = simpleTextInputTrial(this.question(), this.errors);
+  this.ask = checkboxAndTextInputTrial(this.question(), this.errors);
 }
 
 var DialogueState = function(graph, maxDepth) {
@@ -286,12 +363,12 @@ var DialogueState = function(graph, maxDepth) {
   this.depth = 0;
   this.maxDepth = maxDepth;
   this.queue = [];
+  this.knowledge = [];
   this.stop = false;
   for (var i=0; i<this.graph.vertices.length; i++) {
     var vertex = this.graph.vertices[i];
     this.queue.push(new CauseQuery(graph, vertex));
   }
-  this.knowledge = [];
   this.add_vertex = function(fact) {
     this.graph.add_vertex(fact);
     //priority stuff:
@@ -308,11 +385,28 @@ var DialogueState = function(graph, maxDepth) {
     }*/
   }
   this.accumulatedText = function() {
-    return ["Here are some things you know:", ""].concat(
-      this.knowledge.map(function(str) {return caps(str) + ".";})
-    )
+    if (this.knowledge.length == 1) {
+      return ["Here are some things you know:", "", caps(this.knowledge[0].text) + "."];
+    } else {
+      var lst = [
+        "Here are some things you know:",
+        "(if any of these sentences are ungrammatical or strangely worded, please mark the checkbox next to them)",
+        "",
+        caps(this.knowledge[0].text) + "."
+      ];
+      for (var i=1; i<this.knowledge.length; i++) {
+        lst.push(caps(this.knowledge[i].text + "." + checkbox("ungrammatical" + i)));
+      }
+      return lst;
+    }
+     /*concat(
+      this.knowledge.map(function(str) {return caps(str) + ".";})*/
   }
-  this.update = function(query, answer) {
+  this.update = function(query, answer, otherAnswers) {
+    for (var i=0; i<otherAnswers.length; i++) {
+      var otherAnswer = otherAnswers[i];
+      this.knowledge[i+1].ungrammatical = otherAnswer;
+    }
     if (answer != "NO_RESPONSE") {
       var source_fact = new Fact(answer, null, true);
       var link = increases(source_fact, query.fact);
@@ -328,11 +422,6 @@ var DialogueState = function(graph, maxDepth) {
   this.next_query = function() {
     return this.queue.splice(this.queue.length-1, 1)[0];
     //possibly in future, make a priority queue and then this line would be getting elem at top of queue without removing it, but changing its priority
-  }
-  this.skipsAllowed = function() {
-    /*var possibleQsLeft = 25;
-    return possibleQsLeft + this.qNum > experiment.nQs;*/
-    return true;
   }
 }
 
